@@ -130,13 +130,17 @@ def load_many_logs_canonical(log_paths):
 if __name__ == "__main__":
   steering_angles = [] # Empty list 
   log_path = sys.argv[1]
+  topic_to_print = 'carState'
+  if len(sys.argv) > 2:
+    topic_to_print = sys.argv[2]
+
   lr = LogReader(log_path)
   logs = list(lr)
   # The following shows you which
   for i in logs:
 	  #print(i.which())
-    if i.which() == "sensorEvents":
-      print (i.sensorEvents)
+    if i.which() == topic_to_print:
+      print (i)
   #print([l.carControl.actuators.steerAngle for l in logs if l.which == "carControl"]);
   # for l in logs:
   #   if l.which == "carControl":
