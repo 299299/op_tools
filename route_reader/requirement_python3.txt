@@ -1,0 +1,6 @@
+aenum
+numpy
+scipy
+pycapnp
+ffmpeg
+opencv-python

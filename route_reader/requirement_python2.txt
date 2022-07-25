@@ -1,0 +1,7 @@
+requests
+aenum
+scipy
+pkgconfig==1.4.0
+Cython
+pycapnp==0.6.4
+libarchive
