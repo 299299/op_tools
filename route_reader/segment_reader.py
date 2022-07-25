@@ -65,6 +65,13 @@ if __name__ == "__main__":
 
     ts = 0
 
+    # find initData
+    for i in logs:
+        if i.which == 'initData':
+            print (i)
+            break
+
+
     for i in logs:
         #print(i.which())
         if i.which == 'roadEncodeIdx':

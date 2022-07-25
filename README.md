@@ -2,8 +2,8 @@
 openpilot related tools, scripts
 
 
-## rlog_reader
+## route_loger
 
-tools that can read op rlog file without the setup the dev environment of openpilot
+tools that can read op route without the setup the dev environment of openpilot
 
-TODO: convert op rlog file to some open format, e.g. ros msg, json, bson ...
+TODO: convert op road test data to some open format, e.g. ros msg, json, bson ...

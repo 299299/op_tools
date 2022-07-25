@@ -1,3 +1,0 @@
-sudo apt-get install libarchive-dev autoconf libtool -y
-
-brew install autoconf automake libtool wget
