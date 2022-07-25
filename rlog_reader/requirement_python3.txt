@@ -1,5 +1,5 @@
 aenum
 numpy
 scipy
-pycapnp==0.6.4
+pycapnp
 ffmpeg
