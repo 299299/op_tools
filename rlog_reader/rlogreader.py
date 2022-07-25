@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
 import os
 import sys
 import gzip
@@ -7,15 +8,13 @@ import json
 import bz2
 import tempfile
 import requests
-import subprocess32 as subprocess
 from aenum import Enum
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import platform
-if platform.system() == "Darwin":
-  os.environ["LA_LIBRARY_FILEPATH"] = "/usr/local/opt/libarchive/lib/libarchive.dylib"
-import libarchive.public
+# if platform.system() == "Darwin":
+#   os.environ["LA_LIBRARY_FILEPATH"] = "/usr/local/opt/libarchive/lib/libarchive.dylib"
+# import libarchive.public
 
 from cereal import log as capnp_log
 

@@ -1,1 +1,1 @@
-sudo apt-get install libarchive-dev
+sudo apt-get install libarchive-dev autoconf libtool -y
