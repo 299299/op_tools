@@ -40,51 +40,120 @@ class VideoReader():
         success, image = self._cap.read()
         # print (success)
 
-
         if success:
             self._last_img = image
-            cv2.imshow('image', image)
-            cv2.waitKey(1)
         else:
             image = self._last_img
 
         return image
 
+class SegmentReader():
+    def __init__(self):
+        self._log_reader = None
+        self._video_reader = VideoReader()
+        self._events = []
+        self._start_ts = 0
+
+    def open(self, path):
+        rlog_file = path + '/rlog.bz2'
+        fcam_video = path + '/fcamera.hevc'
+
+        self._log_reader = lr.LogReader(rlog_file)
+        self._video_reader.open(fcam_video)
+
+        topic_for_events = ['roadEncodeIdx', 'sensorEvents', 'navInstruction',
+                             'gpsLocationExternal', 'cameraOdometry',
+                             'modelV2']
+        logs = list(self._log_reader)
+
+        for i in logs:
+            if i.which in topic_for_events:
+                self._events.append(i)
+                if self._start_ts == 0:
+                    self._start_ts = i.logMonoTime
+
+            # if i.which == 'cameraOdometry':
+            #     print (i)
+
+        print ("start mono time=" + str(self._start_ts))
+
+
+    def processVideo(self, evt):
+        img = self._video_reader.get_img(evt.roadEncodeIdx.encodeId)
+        cv2.imshow('road_camera', img)
+        cv2.waitKey(1)
+
+    def processSensorEvents(self, evt):
+        for se in evt.sensorEvents:
+            if se.sensor == 1: # accleration
+                #print (se)
+                acceleration = se.acceleration.v
+                #print (acceleration)
+
+    def processNav(self, evt):
+        pass
+
+    def processModel(self, evt):
+        #print (evt)
+        pass
+
+    def loop(self):
+
+        replay_start_ts = self._start_ts
+        real_time_start_ts = time.time_ns()
+        num_evt = len(self._events)
+        index = 0
+
+        while index < num_evt:
+            evt = self._events[index]
+
+            event_ts = evt.logMonoTime
+            realt_time_ts = time.time_ns()
+
+            event_dt = event_ts - replay_start_ts
+            real_time_dt = realt_time_ts - real_time_start_ts
+
+            #print (evt)
+            #print ('event_dt=' + str(event_dt) + ' real_time_dt=' + str(real_time_dt))
+
+            if event_dt >= real_time_dt:
+                time.sleep(0.001) # check every 1 ms
+                continue
+
+            if evt.which == 'roadEncodeIdx':
+                self.processVideo(evt)
+
+            if evt.which == 'sensorEvents':
+                self.processSensorEvents(evt)
+
+            if evt.which == 'navInstruction':
+                self.processNav(evt)
+
+            if evt.which == 'modelV2':
+                self.processModel(evt)
+
+            index += 1
+
+
+
+    def close(self):
+        self._video_reader.close()
+        del self._log_reader
+
+
+
+
 
 if __name__ == "__main__":
     folder_path = sys.argv[1]
-    rlog_file = folder_path + '/rlog.bz2'
-    fcam_video = folder_path + '/fcamera.hevc'
 
-    video_reader = VideoReader()
-    video_reader.open(fcam_video)
+    segment_reader = SegmentReader()
+    segment_reader.open(folder_path)
 
-    topic_to_print = ['roadEncodeIdx', 'carState']
-    lr = lr.LogReader(rlog_file)
-    logs = list(lr)
+    segment_reader.loop()
 
-    ts = 0
-
-    # find initData
-    for i in logs:
-        if i.which == 'initData':
-            print (i)
-            break
+    segment_reader.close()
 
 
-    for i in logs:
-        #print(i.which())
-        if i.which == 'roadEncodeIdx':
-            img = video_reader.get_img(i.roadEncodeIdx.encodeId)
-            print (i)
-
-        if i.which == 'carState':
-            ts = i.logMonoTime
-            ts_since_boot_sec = ts / 1e9
-            print (ts_since_boot_sec)
-            print (i)
-
-
-    video_reader.close()
 
 
