@@ -5,6 +5,15 @@ import os
 import sys
 import rlog_reader as lr
 import time
+import numpy as np
+
+from ui_helpers import (_BB_TO_FULL_FRAME, _INTRINSICS, Calibration, plot_model, plot_nav)
+
+width = 1164
+height = 874
+num_px = width * height
+intrinsic_matrix = _INTRINSICS[num_px]
+zoom_matrix = _BB_TO_FULL_FRAME[num_px]
 
 def video_test(video_file):
     cap = cv2.VideoCapture(video_file)
@@ -53,6 +62,10 @@ class SegmentReader():
         self._video_reader = VideoReader()
         self._events = []
         self._start_ts = 0
+        self._img = np.zeros((480, 640, 3), dtype='uint8')
+        self._model = None
+        self._nav = None
+
 
     def open(self, path):
         rlog_file = path + '/rlog.bz2'
@@ -63,7 +76,7 @@ class SegmentReader():
 
         topic_for_events = ['roadEncodeIdx', 'sensorEvents', 'navInstruction',
                              'gpsLocationExternal', 'cameraOdometry',
-                             'modelV2']
+                             'modelV2', 'liveCalibration']
         logs = list(self._log_reader)
 
         for i in logs:
@@ -80,8 +93,11 @@ class SegmentReader():
 
     def processVideo(self, evt):
         img = self._video_reader.get_img(evt.roadEncodeIdx.encodeId)
-        cv2.imshow('road_camera', img)
-        cv2.waitKey(1)
+
+        #print (zoom_matrix)
+
+        cv2.warpAffine(img, zoom_matrix[:2], (self._img.shape[1], self._img.shape[0]), dst=self._img, flags=cv2.WARP_INVERSE_MAP)
+        # self._img = img
 
     def processSensorEvents(self, evt):
         for se in evt.sensorEvents:
@@ -91,11 +107,15 @@ class SegmentReader():
                 #print (acceleration)
 
     def processNav(self, evt):
-        pass
+        #print (evt)
+        self._nav = evt.navInstruction
 
     def processModel(self, evt):
-        #print (evt)
-        pass
+        self._model = evt.modelV2
+
+    def processCalibration(self, evt):
+        rpyCalib = np.asarray(evt.liveCalibration.rpyCalib)
+        self._calibration = Calibration(num_px, rpyCalib, intrinsic_matrix)
 
     def loop(self):
 
@@ -113,6 +133,8 @@ class SegmentReader():
             event_dt = event_ts - replay_start_ts
             real_time_dt = realt_time_ts - real_time_start_ts
 
+            image_updated = False
+
             #print (evt)
             #print ('event_dt=' + str(event_dt) + ' real_time_dt=' + str(real_time_dt))
 
@@ -122,6 +144,7 @@ class SegmentReader():
 
             if evt.which == 'roadEncodeIdx':
                 self.processVideo(evt)
+                image_updated = True
 
             if evt.which == 'sensorEvents':
                 self.processSensorEvents(evt)
@@ -131,6 +154,20 @@ class SegmentReader():
 
             if evt.which == 'modelV2':
                 self.processModel(evt)
+
+            if evt.which == 'liveCalibration':
+                self.processCalibration(evt)
+
+
+            if image_updated:
+                if self._model:
+                    # print (self._model)
+                    plot_model(self._model, self._img, self._calibration)
+                if self._nav:
+                    plot_nav(self._nav, self._img)
+
+                cv2.imshow('road_camera', self._img)
+                cv2.waitKey(1)
 
             index += 1
 

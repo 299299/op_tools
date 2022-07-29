@@ -128,5 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-scripts/road_data/
+scripts/road_data*/
 .DS_Store
