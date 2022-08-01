@@ -2,6 +2,7 @@ import itertools
 from typing import Any, Dict, Tuple
 import numpy as np
 import cv2
+import math
 
 TICI = False
 
@@ -114,12 +115,31 @@ for size, focal, full_size in cams:
     [0., focal, full_size[1] / 2.],
     [0., 0., 1.]])
 
+
+def euler_to_rot(theta):
+  R_x = np.array([[1, 0, 0 ],
+  [0, math.cos(theta[0]), -math.sin(theta[0]) ],
+  [0, math.sin(theta[0]), math.cos(theta[0]) ]
+  ])
+
+  R_y = np.array([[math.cos(theta[1]), 0, math.sin(theta[1]) ],
+  [0, 1, 0 ],
+  [-math.sin(theta[1]), 0, math.cos(theta[1]) ]
+  ])
+
+  R_z = np.array([[math.cos(theta[2]), -math.sin(theta[2]), 0],
+  [math.sin(theta[2]), math.cos(theta[2]), 0],
+  [0, 0, 1]
+  ])
+
+  R = np.dot(R_z, np.dot( R_y, R_x ))
+  return R
+
 # aka 'extrinsic_matrix'
 # road : x->forward, y -> left, z->up
 def get_view_frame_from_road_frame(roll, pitch, yaw, height):
-  rot = np.array([[ 9.99744033e-01 , 1.37415130e-02,-1.79733113e-02],
-                   [-1.37419091e-02, 9.99905570e-01, 1.01469225e-04],
-                   [ 1.79730084e-02, 1.45544358e-04, 9.99838462e-01]])
+  theta = (roll, pitch, yaw)
+  rot = euler_to_rot(theta)
   device_from_road = rot.dot(np.diag([1, -1, -1]))
   view_from_road = view_frame_from_device_frame.dot(device_from_road)
   return np.hstack((view_from_road, [[0], [height], [0]]))
@@ -127,10 +147,8 @@ def get_view_frame_from_road_frame(roll, pitch, yaw, height):
 
 # aka 'extrinsic_matrix'
 def get_view_frame_from_calib_frame(roll, pitch, yaw, height):
-  rot = np.array([[ 9.99744033e-01 , 1.37415130e-02,-1.79733113e-02],
-                   [-1.37419091e-02, 9.99905570e-01, 1.01469225e-04],
-                   [ 1.79730084e-02, 1.45544358e-04, 9.99838462e-01]])
-  device_from_calib= rot
+  theta = (roll, pitch, yaw)
+  device_from_calib= euler_to_rot(theta)
   view_from_calib = view_frame_from_device_frame.dot(device_from_calib)
   return np.hstack((view_from_calib, [[0], [height], [0]]))
 
