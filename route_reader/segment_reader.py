@@ -65,6 +65,7 @@ class SegmentReader():
         self._img = np.zeros((480, 640, 3), dtype='uint8')
         self._model = None
         self._nav = None
+        self._calibration = None
 
 
     def open(self, path):
@@ -160,7 +161,7 @@ class SegmentReader():
 
 
             if image_updated:
-                if self._model:
+                if self._model and self._calibration:
                     # print (self._model)
                     plot_model(self._model, self._img, self._calibration)
                 if self._nav:
